@@ -14,6 +14,12 @@
 #if ARDUINO >= 100
 #include "Arduino.h"
 #else
+ */
+
+
+#if ARDUINO >= 100
+#include "Arduino.h"
+#else
 #include "WProgram.h"
 #endif
 
@@ -30,8 +36,8 @@ DFRobot_PH::DFRobot_PH()
 {
     this->_temperature    = 25.0;
     this->_phValue        = 7.0;
-    this->_acidVoltage    = 2032.44;    //buffer solution 4.0 at 25C
-    this->_neutralVoltage = 1500.0;     //buffer solution 7.0 at 25C
+    this->_acidVoltage    = 1577.0;    //buffer solution 4.0 at 25C
+    this->_neutralVoltage = 1182.0;     //buffer solution 7.0 at 25C
     this->_voltage        = 1500.0;
 }
 
@@ -43,15 +49,15 @@ DFRobot_PH::~DFRobot_PH()
 void DFRobot_PH::begin()
 {
     EEPROM_read(PHVALUEADDR, this->_neutralVoltage);  //load the neutral (pH = 7.0)voltage of the pH board from the EEPROM
-    //Serial.print("_neutralVoltage:");
-    //Serial.println(this->_neutralVoltage);
+    Serial.print("_neutralVoltage:");
+    Serial.println(this->_neutralVoltage);
     if(EEPROM.read(PHVALUEADDR)==0xFF && EEPROM.read(PHVALUEADDR+1)==0xFF && EEPROM.read(PHVALUEADDR+2)==0xFF && EEPROM.read(PHVALUEADDR+3)==0xFF){
         this->_neutralVoltage = 1500.0;  // new EEPROM, write typical voltage
         EEPROM_write(PHVALUEADDR, this->_neutralVoltage);
     }
     EEPROM_read(PHVALUEADDR+4, this->_acidVoltage);//load the acid (pH = 4.0) voltage of the pH board from the EEPROM
-    //Serial.print("_acidVoltage:");
-    //Serial.println(this->_acidVoltage);
+    Serial.print("_acidVoltage:");
+    Serial.println(this->_acidVoltage);
     if(EEPROM.read(PHVALUEADDR+4)==0xFF && EEPROM.read(PHVALUEADDR+5)==0xFF && EEPROM.read(PHVALUEADDR+6)==0xFF && EEPROM.read(PHVALUEADDR+7)==0xFF){
         this->_acidVoltage = 2032.44;  // new EEPROM, write typical voltage
         EEPROM_write(PHVALUEADDR+4, this->_acidVoltage);
@@ -75,9 +81,8 @@ void DFRobot_PH::calibration(float voltage, float temperature,char* cmd)
 {
     this->_voltage = voltage;
     this->_temperature = temperature;
-    String sCmd = String(cmd);
-    sCmd.toUpperCase();
-    phCalibration(cmdParse(sCmd.c_str()));  // if received Serial CMD from the serial monitor, enter into the calibration mode
+    strupr(cmd);
+    phCalibration(cmdParse(cmd));  // if received Serial CMD from the serial monitor, enter into the calibration mode
 }
 
 void DFRobot_PH::calibration(float voltage, float temperature)
@@ -161,14 +166,14 @@ void DFRobot_PH::phCalibration(byte mode)
 
         case 2:
         if(enterCalibrationFlag){
-            if((this->_voltage>1322)&&(this->_voltage<1678)){        // buffer solution:7.0{
+            if((this->_voltage>1004)&&(this->_voltage<1360)){        // buffer solution:7.0{
                 Serial.println();
                 Serial.print(F(">>>Buffer Solution:7.0"));
                 this->_neutralVoltage =  this->_voltage;
                 Serial.println(F(",Send EXITPH to Save and Exit<<<"));
                 Serial.println();
                 phCalibrationFinish = 1;
-            }else if((this->_voltage>1854)&&(this->_voltage<2210)){  //buffer solution:4.0
+            }else if((this->_voltage>1399)&&(this->_voltage<1755)){  //buffer solution:4.0
                 Serial.println();
                 Serial.print(F(">>>Buffer Solution:4.0"));
                 this->_acidVoltage =  this->_voltage;
@@ -188,10 +193,9 @@ void DFRobot_PH::phCalibration(byte mode)
         if(enterCalibrationFlag){
             Serial.println();
             if(phCalibrationFinish){
-                if((this->_voltage>1322)&&(this->_voltage<1678)){
-
+                if((this->_voltage>1004)&&(this->_voltage<1360)){
                     EEPROM_write(PHVALUEADDR, this->_neutralVoltage);
-                }else if((this->_voltage>1854)&&(this->_voltage<2210)){
+                }else if((this->_voltage>1399)&&(this->_voltage<1755)){
                     EEPROM_write(PHVALUEADDR+4, this->_acidVoltage);
                 }
                 Serial.print(F(">>>Calibration Successful"));
